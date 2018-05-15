@@ -24,7 +24,7 @@ public class Client {
 		String fromServer, fromUser;
 
 
-		while ((fromServer = in.readLine()) != null) {
+		while((fromServer = in.readLine()) != null) {
 			System.out.println("Server: " + fromServer);
 			if (fromServer.equals("Bye."))
 				break;
