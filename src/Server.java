@@ -14,38 +14,19 @@ public class Server {
 			System.exit(1);
 		}
 
-		// Get socket from client and accept connection.
-		Socket clientSocket = null;
-		try {
-			clientSocket = serverSocket.accept();
-		} catch (IOException e) {
-			System.err.println("Accept failed.");
-			System.exit(1);
-		}
-
-		// Set up writer (for writing to client) and reader(for reading from client).
-		PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-		BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-		String inputLine, outputLine;
-
-		KnockKnockProtocol kkp = new KnockKnockProtocol();
-
-		outputLine = kkp.processInput(null);
-		out.println(outputLine);
-
-		// Read in line from client. If it's not null, we good to go.
-		while((inputLine = in.readLine()) != null) {
-			outputLine = kkp.processInput(inputLine);
-			out.println(outputLine);
-			if(outputLine.equals("Bye.")) {
-				break;
+		while(true) {
+			// Get socket from client and accept connection.
+			Socket clientSocket = null;
+			try {
+				// If we manage to accept a connection from a client, we want to start a thread for this connection.
+				// We need the threads to be able to have multiple connections at the same time.
+				clientSocket = serverSocket.accept();
+				ServerThread serverThread = new ServerThread(clientSocket);
+				serverThread.start();
+			} catch (IOException e) {
+				// Do nothing, just keep waiting for more connections.
 			}
 		}
-		
-		out.close();
-		in.close();
-		clientSocket.close();
-		serverSocket.close();
 	}
 }
 
