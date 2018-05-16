@@ -1,14 +1,18 @@
 import java.io.*;
 import java.net.*;
+import java.util.Hashtable;
+import java.util.Set;
 
 public class ServerThread extends Thread {
 
 	// Fields.
 	private Socket clientSocket = null;
+	private Hashtable table = null;
 
 	// Constructor.
-	ServerThread(Socket clientSocket) {
+	ServerThread(Socket clientSocket, Hashtable table) {
 		this.clientSocket = clientSocket;
+		this.table = table;
 	}
 
 	// Methods.
@@ -21,6 +25,8 @@ public class ServerThread extends Thread {
 			// Do nothing for now, may need to change this later...
 		}
 		
+		out.println("The client's IP address is:" + clientSocket.getRemoteSocketAddress().toString());
+		
 		BufferedReader in = null;
 		try {
 			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -28,38 +34,58 @@ public class ServerThread extends Thread {
 			// Do nothing for now, may need to change this later...
 		}
 		
-		String inputLine, outputLine;
 
-		KnockKnockProtocol kkp = new KnockKnockProtocol();
-
-		outputLine = kkp.processInput(null);
-		out.println(outputLine);
-
-		// Read in line from client. If it's not null, we good to go.
-		try {
-			while((inputLine = in.readLine()) != null) {
-				outputLine = kkp.processInput(inputLine);
-				out.println(outputLine);
-				if(outputLine.equals("Bye.")) {
-					break;
+		while(true) {
+			String inputLine = null;
+			try {
+				inputLine = in.readLine();
+			} catch (IOException e) {
+				// Do nothing for now, may need to change this later...
+			}
+			
+			if(inputLine != null) {
+				if(inputLine.contains("/name")) {
+					String[] array = inputLine.split(" ");
+					if(table.containsValue(array[1])) {
+						out.println("Name, " + array[1] + ", is already taken. Please choose another.");
+						continue;
+					} else if(table.containsKey(clientSocket)) {
+						out.println("You have already been assigned a name. It is: " + table.get(clientSocket));
+					} else {
+						table.put(clientSocket, array[1]);
+					}
+				} else if(inputLine.contains("/users")) {
+					if (table.isEmpty()) {
+						out.println("There are no active users.");
+						continue;
+					}
+					for(Object user : table.values()) {
+						String username = user.toString();
+						out.println(username);
+					}
+				} else if(inputLine.contains("/msg")){
+					String[] array = inputLine.split(" ");
+					if(!table.containsValue(array[1])) {
+						out.println("The user, " + array[1] + ", could not be found.");
+					} else {
+						for(Object socket : table.keySet()) {
+							// If we have found the socket corresponding to the name to which the message is being sent...
+							if(array[1].equals(table.get(socket))) {
+								PrintWriter tempWriter = null;
+								try {
+									tempWriter = new PrintWriter(((Socket) socket).getOutputStream(), true);
+								} catch (IOException e) {
+									// Do nothing for now, may need to change this later...
+								}
+								
+								tempWriter.println(array[2]);
+							}
+						}
+					}
+				} else {
+					out.println("Please enter a valid command.");
 				}
 			}
-		} catch (IOException e1) {
-			// Do nothing for now, may need to change this later...
-		}
-
-		// Close everything.
-		out.close();
-		try {
-			in.close();
-		} catch (IOException e) {
-			// Do nothing for now, may need to change this later...
-		}
-		
-		try {
-			clientSocket.close();
-		} catch (IOException e) {
-			// Do nothing for now, may need to change this later...
 		}
 	}
 }
