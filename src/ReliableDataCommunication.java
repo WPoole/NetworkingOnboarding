@@ -79,18 +79,7 @@ public class ReliableDataCommunication {
 			InetAddress serverIP = InetAddress.getByAddress(serverIPAddressInBytes);
 			System.out.println("Server IP is: " + serverIP.toString());
 			int serverPort = 4445;
-
-//			boolean isConnectionEstablished = false;
-//			while(!isConnectionEstablished) {
-//				// Send a first small packet to establish connection.
-//				byte[] greetingByte = new byte[1];
-//				greetingByte[0] = 'h';
-//				DatagramPacket packetToSend = new DatagramPacket(greetingByte, greetingByte.length, serverIP, serverPort);
-//				clientSocket.send(packetToSend);
-//				
-//				
-//			}
-
+			int chanceOfPacketBeingLost = 50;
 
 			// Read in file.
 			Path path = Paths.get("fileToSend");
@@ -146,8 +135,19 @@ public class ReliableDataCommunication {
 				
 				boolean isReadyForNextChunk = false;
 				while(!isReadyForNextChunk) {
-					// Try to send the packet.
-					clientSocket.send(packetToSend);
+					
+					double randomNumber = 100 * Math.random();
+					System.out.println("Random number: " + randomNumber);
+					
+					// According to the assignment spec, we only want to ACTUALLY try to send the packet if
+					// the random number we generate is larger than the chance of the packet being lost that 
+					// we set earlier in the code.
+					if(randomNumber > chanceOfPacketBeingLost) {
+						// Try to send the packet.
+						clientSocket.send(packetToSend);
+						System.out.println("SENDDDDDDDDDDDD");
+					}
+					
 
 					byte[] ackReceived = new byte[1];
 					DatagramPacket ackPacketReceived = new DatagramPacket(ackReceived, ackReceived.length);
